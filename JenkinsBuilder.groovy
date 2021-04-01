@@ -59,7 +59,7 @@ def slavePodTemplate = """
     podTemplate(name: k8slabel, label: k8slabel, yaml: slavePodTemplate, showRawYaml: false) {
       node(k8slabel) {
         stage('Pull SCM') {
-          git branch: '(params.GIT_BRANCH)', credentialsId: 'github-common-access', url: 'https://github.com/vrodi18/buildtools.git'
+          git branch: 'master', credentialsId: 'github-common-access', url: 'https://github.com/vrodi18/buildtools.git'
             gitCommitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
         }
         dir('Docker/') {
