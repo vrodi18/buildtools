@@ -64,38 +64,21 @@ def slavePodTemplate = """
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "docker-hub-creds", usernameVariable: 'username', passwordVariable: 'password']]) {
               stage("Docker Build") {
                 dockerImage = docker.build registry
-              }
+              }             
 
-              stage("Docker Login") {
-                sh "docker login --username vrodionov   --password qc7Q]JH_qb*5rr5"
-              }
-              stage("Docker Push") {
-                docker.withRegistry( '', registryCredentials ) {
-                  dockerImage.push("${gitCommitHash}")
-                  if (params.PUSH_LATEST) {
-                    dockerImage.push("latest")
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    //           stage("Docker Login") {
-    //             sh "docker login --username ${env.username} --password ${env.password}"
-    //           }
-    //           stage("Docker Push") {
-    //             docker.withRegistry( '', registryCredentials ) {
-    //               dockerImage.push("${gitCommitHash}")
-    //               if (params.PUSH_LATEST) {
-    //                 dockerImage.push("latest")
-    //               }
-    //             }
-    //           }
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
+               stage("Docker Login") {
+                 sh "docker login --username ${env.username} --password ${env.password}"
+               }
+               stage("Docker Push") {
+                 docker.withRegistry( '', registryCredentials ) {
+                   dockerImage.push("${gitCommitHash}")
+                   if (params.PUSH_LATEST) {
+                     dockerImage.push("latest")
+                   }
+                 }
+               }
+             }
+           }
+         }
+       }
+     }
