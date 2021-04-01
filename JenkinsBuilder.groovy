@@ -54,7 +54,7 @@ def slavePodTemplate = """
   properties([[$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], 
     parameters([
         booleanParam(defaultValue: false, description: 'Click this if you would like to deploy to latest', name: 'PUSH_LATEST'), 
-        gitParameter(branch: '', branchFilter: '.*', defaultValue: 'master', description: 'Please select the branch you would like to build ', name: 'GIT_BRANCH', quickFilterEnabled: false, selectedValue: 'NONE', sortMode: 'NONE', tagFilter: '*', type: 'PT_BRANCH_TAG')]), [$class: 'JobLocalConfiguration', changeReasonComment: '']])
+        gitParameter(branch: '', branchFilter: '*', defaultValue: 'master', description: 'Please select the branch you would like to build ', name: 'GIT_BRANCH', quickFilterEnabled: false, selectedValue: 'NONE', sortMode: 'NONE', tagFilter: '*', type: 'PT_BRANCH_TAG')]), [$class: 'JobLocalConfiguration', changeReasonComment: '']])
 
     podTemplate(name: k8slabel, label: k8slabel, yaml: slavePodTemplate, showRawYaml: false) {
       node(k8slabel) {
