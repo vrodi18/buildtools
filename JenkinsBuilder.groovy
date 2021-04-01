@@ -51,16 +51,12 @@ def slavePodTemplate = """
               path: /var/run/docker.sock
     """
 
-  properties([
-          parameters([
-                  booleanParam(defaultValue: false,description: 'Click this if you would like to deploy to latest',name: 'PUSH_LATEST'
-          )])
-  ])
+  properties([[$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], parameters([booleanParam(defaultValue: false, description: 'Click this if you would like to deploy to latest', name: 'PUSH_LATEST'), gitParameter(branch: '', branchFilter: '.*', defaultValue: 'master', description: 'Please select the branch you would like to build ', name: 'GIT_BRANCH', quickFilterEnabled: false, selectedValue: 'NONE', sortMode: 'NONE', tagFilter: '*', type: 'PT_BRANCH_TAG')]), [$class: 'JobLocalConfiguration', changeReasonComment: '']])
 
     podTemplate(name: k8slabel, label: k8slabel, yaml: slavePodTemplate, showRawYaml: false) {
       node(k8slabel) {
         stage('Pull SCM') {
-            git branch: 'master', credentialsId: 'github-common-access', url: 'https://github.com/fuchicorp/buildtools.git'
+          git branch: 'params.GIT_BRANCH', credentialsId: 'github-common-access', url: 'https://github.com/fuchicorp/buildtools.git'
             gitCommitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
         }
         dir('Docker/') {
