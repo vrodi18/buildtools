@@ -63,7 +63,8 @@ def slavePodTemplate = """
     podTemplate(name: k8slabel, label: k8slabel, yaml: slavePodTemplate, showRawYaml: false) {
       node(k8slabel) {
         stage('Pull SCM') {
-          git branch: "${params.GIT_BRANCH}", credentialsId: 'github-common-access', url: 'https://github.com/vrodi18/buildtools.git'
+            sh "git clone --single-branch --branch ${params.GIT_BRANCH} https://github.com/vrodi18/buildtools.git"
+          // git branch: "${params.GIT_BRANCH}", credentialsId: 'github-common-access', url: 'https://github.com/vrodi18/buildtools.git'
             gitCommitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
         }
         dir('Docker/') {
@@ -77,10 +78,7 @@ def slavePodTemplate = """
                 sh "docker login --username ${env.username} --password ${env.password}"
               }
               stage("Docker Push") {
-                docker.withRegistry( '', registryCredentials ) {
-                  dockerImage.push("${params.GIT_BRANCH}-${gitCommitHash}")
-                  if (params.PUSH_LATEST) {
-                    dockerImage.push("latest")
+                sh: echo Hello
                   }
                 }
               }
