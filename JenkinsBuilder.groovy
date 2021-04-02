@@ -52,39 +52,40 @@ def slavePodTemplate = """
     """
 
   properties([[$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], 
-          parameters([booleanParam(defaultValue: false, description: 'Click this if you would like to deploy to latest', name: 'PUSH_LATEST'), 
-          gitParameter(branch: '', branchFilter: 'origin/(.*)', defaultValue: 'master', description: 'Please select the branch you would like to build ', name: 'GIT_BRANCH', quickFilterEnabled: false, selectedValue: 'NONE', sortMode: 'NONE', tagFilter: '*', type: 'PT_BRANCH_TAG')]), [$class: 'JobLocalConfiguration', changeReasonComment: '']])
+          parameters([
+            booleanParam(defaultValue: false, description: 'Click this if you would like to deploy to latest', name: 'PUSH_LATEST'), 
+            gitParameter(branch: '', branchFilter: 'origin/(.*)', defaultValue: 'master', 
+                       description: 'Please select the branch you would like to build ', 
+                       name: 'GIT_BRANCH', quickFilterEnabled: true, selectedValue: 
+                       'NONE', sortMode: 'NONE', tagFilter: '*', type: 'PT_BRANCH')]), 
+                      [$class: 'JobLocalConfiguration', changeReasonComment: '']])
 
     podTemplate(name: k8slabel, label: k8slabel, yaml: slavePodTemplate, showRawYaml: false) {
       node(k8slabel) {
         stage('Pull SCM') {
-          //git branch: "${params.GIT_BRANCH}", credentialsId: 'github-common-access', url: 'https://github.com/vrodi18/buildtools.git'
-          git credentialsId: 'github-common-access', url: 'https://github.com/vrodi18/buildtools.git'
+          git branch: "${params.GIT_BRANCH}", credentialsId: 'github-common-access', url: 'https://github.com/vrodi18/buildtools.git'
             gitCommitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-        }
-        stage('checkout') {
-          sh: "git checkout ${params.GIT_BRANCH}"
         }
         dir('Docker/') {
           container("docker") {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "docker-hub-creds", usernameVariable: 'username', passwordVariable: 'password']]) {
               stage("Docker Build") {
                 dockerImage = docker.build registry
-              }             
+              }
 
-               stage("Docker Login") {
-                 sh "docker login --username ${env.username} --password ${env.password}"
-               }
-               stage("Docker Push") {
-                 docker.withRegistry( '', registryCredentials ) {
-                   dockerImage.push("${gitCommitHash}")
-                   if (params.PUSH_LATEST) {
-                     dockerImage.push("latest")
-                   }
-                 }
-               }
-             }
-           }
-         }
-       }
-     }
+              stage("Docker Login") {
+                sh "docker login --username ${env.username} --password ${env.password}"
+              }
+              stage("Docker Push") {
+                docker.withRegistry( '', registryCredentials ) {
+                  dockerImage.push("${gitCommitHash}")
+                  if (params.PUSH_LATEST) {
+                    dockerImage.push("latest")
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
