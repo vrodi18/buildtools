@@ -1,9 +1,11 @@
-  def username = ""
+package com.lib  
+import groovy.json.JsonSlurper
+def username = ""
   def environment = ""
   def gitCommitHash = ""
   def dockerImage = ""
   def repositoryName = "${JOB_NAME}"
-  def registry = "vrodionov/${repositoryName}"
+  def registry = "bekzhanosh/${repositoryName}"
   def registryCredentials = 'docker-hub-creds'
 
   def branch = "${scm.branches[0].name}".replaceAll(/^\*\//, '')
@@ -12,6 +14,16 @@
         environment = 'prod' 
         repositoryName = repositoryName + '-prod'
   }
+
+
+
+// Getting common functions from jenkins global library
+def commonFunctions        = new CommonFunction()
+
+// Get username who run the job 
+def triggerUser            = commonFunctions.getBuildUser()
+      
+
 
 def k8slabel = "jenkins-pipeline-${UUID.randomUUID().toString()}"
 def slavePodTemplate = """
@@ -51,25 +63,37 @@ def slavePodTemplate = """
               path: /var/run/docker.sock
     """
 
-  properties([[$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], 
-          parameters([
-            booleanParam(defaultValue: false, description: 'Click this if you would like to deploy to latest', name: 'PUSH_LATEST'), 
-            gitParameter(branch: '', branchFilter: 'origin/(.*)', defaultValue: 'master', 
-                       description: 'Please select the branch you would like to build ', 
-                       name: 'GIT_BRANCH', quickFilterEnabled: true, selectedValue: 
-                       'NONE', sortMode: 'NONE', tagFilter: '*', type: 'PT_BRANCH')]), 
-                      [$class: 'JobLocalConfiguration', changeReasonComment: '']])
 
+
+
+
+properties([[$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], 
+            parameters([booleanParam(defaultValue: false, description: 'Click this if you would like to deploy to latest', name: 'PUSH_LATEST'), 
+                        gitParameter(branch: '', branchFilter: 'origin/(.*)', 
+                                     defaultValue: 'origin/master', description: 'SELECT', 
+                                     name: 'BRANCH', quickFilterEnabled: true, selectedValue: 'NONE', 
+                                     sortMode: 'NONE', tagFilter: '*', type: 'PT_BRANCH')]), 
+                                     [$class: 'JobLocalConfiguration', changeReasonComment: '']])
+ 
     podTemplate(name: k8slabel, label: k8slabel, yaml: slavePodTemplate, showRawYaml: false) {
       node(k8slabel) {
-        stage('Pull SCM') {
-            sh "git clone --single-branch --branch ${params.GIT_BRANCH} https://github.com/vrodi18/buildtools.git"
-          // git branch: "${params.GIT_BRANCH}", credentialsId: 'github-common-access', url: 'https://github.com/vrodi18/buildtools.git'
-            gitCommitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-        }
+        stage('Pull SCM') 
+        {
+          if(params.PUSH_LATEST){
+          git branch: "dev", credentialsId: 'github-common-access', 
+          url: 'https://github.com/Bekzhan-osh/build.git'
+          }
+          else{
+          git branch: "${params.BRANCH}", credentialsId: 'github-common-access', 
+          url: 'https://github.com/Bekzhan-osh/build.git'
+          gitCommitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+          }}
+       
+        
         dir('Docker/') {
           container("docker") {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "docker-hub-creds", usernameVariable: 'username', passwordVariable: 'password']]) {
+              
               stage("Docker Build") {
                 dockerImage = docker.build registry
               }
@@ -78,8 +102,24 @@ def slavePodTemplate = """
                 sh "docker login --username ${env.username} --password ${env.password}"
               }
               stage("Docker Push") {
-                sh: echo Hello
+                
+                  if (params.PUSH_LATEST) {
+                  echo "Checking for ADMIN privilege"
+                    if (commonFunctions.isAdmin(triggerUser)) {                     
+                           echo "You have ADMIN privilege!!  PUSHING THE 'latest' TAG..."
+                            dockerImage.push("latest")
+                     } else {
+                      echo "Abording... Requires ADMIN Access"
+                    }
+                } else {
+                  docker.withRegistry( '', registryCredentials ) {
+                  dockerImage.push("${gitCommitHash}")
+                    echo "PUSHING THE '"${gitCommitHash}"' TAG... "
                   }
+                    
+                  
+                  
+                  
                 }
               }
             }
