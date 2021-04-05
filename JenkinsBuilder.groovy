@@ -1,4 +1,4 @@
-  package com.lib  
+package com.lib  
 import groovy.json.JsonSlurper  
 
 def username = ""
