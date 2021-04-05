@@ -1,6 +1,5 @@
 package com.lib  
 import groovy.json.JsonSlurper  
-
 def username = ""
   def environment = ""
   def gitCommitHash = ""
@@ -8,20 +7,16 @@ def username = ""
   def repositoryName = "${JOB_NAME}"
   def registry = "vrodionov/${repositoryName}"
   def registryCredentials = 'docker-hub-creds'
-
   def branch = "${scm.branches[0].name}".replaceAll(/^\*\//, '')
   if (branch =~ '^v[0-9].[0-9]' || branch =~ '^v[0-9][0-9].[0-9]' ) {
         // if Application release or branch starts with v* example v0.1 will be deployed to prod
         environment = 'prod' 
         repositoryName = repositoryName + '-prod'
   }
-
 // Getting common functions from jenkins global library
 def commonFunctions        = new CommonFunction()
-
 // Get username who run the job 
 def triggerUser            = commonFunctions.getBuildUser()
-
 def k8slabel = "jenkins-pipeline-${UUID.randomUUID().toString()}"
 def slavePodTemplate = """
       metadata:
@@ -59,7 +54,6 @@ def slavePodTemplate = """
             hostPath:
               path: /var/run/docker.sock
     """
-
   properties([[$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], 
           parameters([
             booleanParam(defaultValue: false, description: 'Click this if you would like to deploy to latest', name: 'PUSH_LATEST'), 
@@ -68,25 +62,20 @@ def slavePodTemplate = """
                        name: 'GIT_BRANCH', quickFilterEnabled: true, selectedValue: 
                        'NONE', sortMode: 'NONE', tagFilter: '*', type: 'PT_BRANCH')]), 
                       [$class: 'JobLocalConfiguration', changeReasonComment: '']])
-
     podTemplate(name: k8slabel, label: k8slabel, yaml: slavePodTemplate, showRawYaml: false) {
       node(k8slabel) {
-
        stage("Checking if u are allowed to PUSH_LATEST") {
                 if (params.PUSH_LATEST) {
                   echo "Checking for Admin privilege"
                     if (commonFunctions.isAdmin(triggerUser)) {                     
-                      echo "You have Admin privilege!! Starting Deletion of Labels..."
+                      echo "You have Admin privilege!! "
                     } else {
-                      echo "Abording... Requires Admin Access"
+                      echo "Aborting... Requires Admin Access"
                     }
                 } else {
                   echo "Skipping this stage!"
                 }
               }            
-
-
-
         stage('Pull SCM') {
           git branch: "${params.GIT_BRANCH}", credentialsId: 'github-common-access', url: 'https://github.com/vrodi18/buildtools.git'
             gitCommitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
@@ -97,7 +86,6 @@ def slavePodTemplate = """
               stage("Docker Build") {
                 dockerImage = docker.build registry
               }
-
               stage("Docker Login") {
                 sh "docker login --username ${env.username} --password ${env.password}"
               }
