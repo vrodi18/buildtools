@@ -6,7 +6,7 @@ def username = ""
   def gitCommitHash = ""
   def dockerImage = ""
   def repositoryName = "${JOB_NAME}"
-  def registry = "fuchicorp/${repositoryName}"
+  def registry = "vrodionov/${repositoryName}"
   def registryCredentials = 'docker-hub-creds'
 
   def branch = "${scm.branches[0].name}".replaceAll(/^\*\//, '')
@@ -88,7 +88,7 @@ def slavePodTemplate = """
 
 
         stage('Pull SCM') {
-          git branch: "${params.GIT_BRANCH}", credentialsId: 'github-common-access', url: 'https://github.com/fuchicorp/buildtools.git'
+          git branch: "${params.GIT_BRANCH}", credentialsId: 'github-common-access', url: 'https://github.com/vrodi18/buildtools.git'
             gitCommitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
         }
         dir('Docker/') {
