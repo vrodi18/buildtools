@@ -80,7 +80,7 @@ properties([[$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: fal
         stage('Pull SCM') 
         {
           if(params.PUSH_LATEST){
-          git branch: "dev", credentialsId: 'github-common-access', 
+          git branch: "master", credentialsId: 'github-common-access', 
           url: 'https://github.com/vrodi18/buildtools.git'
           }
           else{
