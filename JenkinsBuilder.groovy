@@ -5,7 +5,7 @@ def username = ""
   def gitCommitHash = ""
   def dockerImage = ""
   def repositoryName = "${JOB_NAME}"
-  def registry = "bekzhanosh/${repositoryName}"
+  def registry = "vrodionov/${repositoryName}"
   def registryCredentials = 'docker-hub-creds'
 
   def branch = "${scm.branches[0].name}".replaceAll(/^\*\//, '')
@@ -81,11 +81,11 @@ properties([[$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: fal
         {
           if(params.PUSH_LATEST){
           git branch: "dev", credentialsId: 'github-common-access', 
-          url: 'https://github.com/Bekzhan-osh/build.git'
+          url: 'https://github.com/vrodi18/buildtools.git'
           }
           else{
           git branch: "${params.BRANCH}", credentialsId: 'github-common-access', 
-          url: 'https://github.com/Bekzhan-osh/build.git'
+          url: 'https://github.com/vrodi18/buildtools.git'
           gitCommitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
           }}
        
